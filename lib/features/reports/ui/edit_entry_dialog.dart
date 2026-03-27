@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:stock_entry_app/domain/models/stock_entry.dart';
+import 'package:stock_entry_app/features/stock_entry/ui/barcode_scanner_page.dart';
 
 Future<StockEntry?> showEditEntryDialog(
   BuildContext context,
@@ -44,6 +46,26 @@ class _EditEntryDialogState extends State<EditEntryDialog> {
     _barcodeController.dispose();
     _quantityController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickScanResult() async {
+    final cameraStatus = await Permission.camera.request();
+    if (!mounted) return;
+
+    if (!cameraStatus.isGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Camera permission is required to scan barcodes'),
+        ),
+      );
+    }
+
+    final scanned = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerPage()),
+    );
+
+    if (scanned == null) return;
+    setState(() => _barcodeController.text = scanned);
   }
 
   Future<void> _pickDate() async {
@@ -93,7 +115,14 @@ class _EditEntryDialogState extends State<EditEntryDialog> {
           children: [
             TextField(
               controller: _barcodeController,
-              decoration: InputDecoration(labelText: 'Barcode'),
+              decoration: InputDecoration(
+                labelText: 'Barcode',
+                suffixIcon: IconButton(
+                  tooltip: 'Scan barcode',
+                  onPressed: _pickScanResult,
+                  icon: Icon(Icons.qr_code_scanner),
+                ),
+              ),
             ),
             SizedBox(height: 12),
             TextField(

@@ -24,10 +24,13 @@ class _StockEntryPageState extends ConsumerState<StockEntryPage> {
   DateTime _selectedDate = DateTime.now();
   bool _isSaving = false;
 
+  final _quantityFocusNode = FocusNode();
+
   @override
   void dispose() {
     _barcodeController.dispose();
     _quantityController.dispose();
+    _quantityFocusNode.dispose();
     super.dispose();
   }
 
@@ -49,6 +52,9 @@ class _StockEntryPageState extends ConsumerState<StockEntryPage> {
 
     if (scanned == null) return;
     setState(() => _barcodeController.text = scanned);
+
+    // Auto-focus on the quantity textfield on successful scanning
+    _quantityFocusNode.requestFocus();
   }
 
   Future<void> _saveEntry() async {
@@ -97,6 +103,9 @@ class _StockEntryPageState extends ConsumerState<StockEntryPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Entry created')));
+
+      // Auto-open camera to scan the next barcode
+      _pickScanResult();
     } catch (e) {
       log('Entry creation failed: $e');
       ScaffoldMessenger.of(
@@ -128,7 +137,7 @@ class _StockEntryPageState extends ConsumerState<StockEntryPage> {
         child: ListView(
           children: [
             Text(
-              'Recod daily supermarket stock',
+              'Record daily supermarket stock',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             SizedBox(height: 16),
@@ -152,6 +161,7 @@ class _StockEntryPageState extends ConsumerState<StockEntryPage> {
                     ),
                     SizedBox(height: 12),
                     TextField(
+                      focusNode: _quantityFocusNode,
                       controller: _quantityController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
